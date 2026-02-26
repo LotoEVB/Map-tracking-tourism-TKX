@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Admin Panel</h1>
+    <div class="top-actions">
+      <a class="btn btn-secondary" href="../index.html">Обратно</a>
+      <span id="admin-email" class="admin-email"></span>
+      <button id="logout-btn" class="btn">Изход</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="tabs">
+      <button class="tab-btn active" data-tab="locations">Location Admin</button>
+      <button class="tab-btn" data-tab="users">User Admin</button>
+    </section>
+
+    <section id="locations-tab" class="tab-content">
+      <h2>Всички локации</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Заглавие</th>
+              <th>Планина</th>
+              <th>Сезон</th>
+              <th>Дата</th>
+              <th>Височина</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="locations-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="users-tab" class="tab-content hidden">
+      <h2>Потребители</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title"></h3>
+        <button id="modal-close" class="icon-btn" aria-label="Затвори">✕</button>
+      </div>
+      <div id="modal-body"></div>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

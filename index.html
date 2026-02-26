@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Карта на любими локации</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero-banner">
+    <div class="hero-overlay">
+      <div class="hero-top-row">
+        <button id="mobile-menu-btn" class="hamburger-btn" aria-label="Отвори меню" aria-expanded="false" aria-controls="hero-menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <nav id="hero-menu" class="hero-menu" aria-label="Основно меню">
+          <button class="menu-link" data-menu="locations">Локации</button>
+          <button class="menu-link" data-menu="seasons">Сезони</button>
+          <button class="menu-link" data-menu="users">Потребители</button>
+          <button id="admin-btn" class="menu-link hidden" data-menu="admin">Admin</button>
+          <button class="menu-link" data-menu="login">Вход</button>
+          <button class="menu-link" data-menu="register">Регистрация</button>
+        </nav>
+        <div id="user-panel" class="user-panel hidden">
+          <span id="user-email"></span>
+          <button id="logout-btn" class="btn btn-secondary">Изход</button>
+        </div>
+      </div>
+      <div class="hero-content">
+        <h1>ТК Хоро и приятели</h1>
+        
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="map-section">
+      <div id="map"></div>
+      <p class="hint">Кликнете върху картата, за да добавите нова локация.</p>
+    </section>
+
+    <aside id="locations-section" class="list-section">
+      <h2>Локации</h2>
+      <div id="locations-list" class="locations-list"></div>
+    </aside>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title"></h3>
+        <button id="modal-close" class="icon-btn" aria-label="Затвори">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="modal-body"></div>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
