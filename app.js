@@ -15,6 +15,7 @@ const state = {
   selectedId: null,
   galleryAutoplayTimerId: null,
   mapSearchMarker: null,
+  isCreatingLocation: false,
 };
 
 const elements = {
@@ -643,7 +644,7 @@ function renderCards() {
         <p class="location-meta"><strong>🏔️ Планина:</strong> ${escapeHtml(location.mountain || "Непосочена планина")}</p>
         <p>${escapeHtml(location.description || "Без описание")}</p>
         <p class="location-meta"><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
-        ${location.visit_date ? `<p class="location-meta"><strong>📅 Дата:</strong> ${escapeHtml(location.visit_date)}</p>` : ""}
+        ${location.visit_date ? `<p class="location-meta"><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
         <p class="location-meta"><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
         <p class="location-meta"><strong>👤 Собственик:</strong> ${own ? "Вие" : "Друг потребител"}</p>
         ${imageUrl ? `<img class="location-image" src="${imageUrl}" alt="Снимка на локация" />` : ""}
@@ -774,37 +775,57 @@ function handleMapClick(event) {
     form.addEventListener("submit", async (submitEvent) => {
       submitEvent.preventDefault();
 
-      const title = document.getElementById("create-title").value.trim();
-      const mountain = document.getElementById("create-mountain").value.trim();
-      const description = document.getElementById("create-description").value.trim();
-      const season = document.getElementById("create-season").value;
-      const rawVisitDate = (document.getElementById("create-visit-date")?.value || "").trim();
-      const visitDate = /^\d{4}-\d{2}-\d{2}$/.test(rawVisitDate) ? rawVisitDate : null;
-      if (rawVisitDate && !visitDate) {
-        alert("Моля, въведете валидна дата.");
+      if (state.isCreatingLocation) {
         return;
       }
-      const popupImageFile = document.getElementById("create-popup-image")?.files?.[0] || null;
-      const titleImageFile = document.getElementById("create-title-image")?.files?.[0] || null;
-      const galleryFileList = document.getElementById("create-gallery-images")?.files;
-      const galleryFiles = galleryFileList ? Array.from(galleryFileList) : [];
-      const elevationM = parseOptionalInteger(document.getElementById("create-elevation")?.value);
 
-      const isCreated = await createLocation({
-        title,
-        mountain,
-        description,
-        season,
-        visitDate,
-        latitude: lat,
-        longitude: lng,
-        elevationM,
-        popupImageFile,
-        titleImageFile,
-        galleryFiles,
-      });
-      if (isCreated) {
-        map.closePopup(popup);
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Запис...";
+      }
+
+      state.isCreatingLocation = true;
+
+      try {
+        const title = document.getElementById("create-title").value.trim();
+        const mountain = document.getElementById("create-mountain").value.trim();
+        const description = document.getElementById("create-description").value.trim();
+        const season = document.getElementById("create-season").value;
+        const rawVisitDate = (document.getElementById("create-visit-date")?.value || "").trim();
+        const visitDate = /^\d{4}-\d{2}-\d{2}$/.test(rawVisitDate) ? rawVisitDate : null;
+        if (rawVisitDate && !visitDate) {
+          alert("Моля, въведете валидна дата.");
+          return;
+        }
+        const popupImageFile = document.getElementById("create-popup-image")?.files?.[0] || null;
+        const titleImageFile = document.getElementById("create-title-image")?.files?.[0] || null;
+        const galleryFileList = document.getElementById("create-gallery-images")?.files;
+        const galleryFiles = galleryFileList ? Array.from(galleryFileList) : [];
+        const elevationM = parseOptionalInteger(document.getElementById("create-elevation")?.value);
+
+        const isCreated = await createLocation({
+          title,
+          mountain,
+          description,
+          season,
+          visitDate,
+          latitude: lat,
+          longitude: lng,
+          elevationM,
+          popupImageFile,
+          titleImageFile,
+          galleryFiles,
+        });
+        if (isCreated) {
+          map.closePopup(popup);
+        }
+      } finally {
+        state.isCreatingLocation = false;
+        if (submitButton instanceof HTMLButtonElement && document.body.contains(submitButton)) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Запази локация";
+        }
       }
     });
   }, 0);
@@ -833,9 +854,9 @@ async function createLocation({ title, mountain, description, season, visitDate,
     }
   }
 
-  const popupImagePath = popupImageFile ? await uploadImage(popupImageFile) : null;
-  const titleImagePath = titleImageFile ? await uploadImage(titleImageFile) : null;
-  const imagePaths = await uploadImages(galleryFiles || []);
+  const popupImagePath = popupImageFile ? await uploadImage(popupImageFile, title) : null;
+  const titleImagePath = titleImageFile ? await uploadImage(titleImageFile, title) : null;
+  const imagePaths = await uploadImages(galleryFiles || [], title);
 
   const { error } = await supabaseClient.from("locations").insert({
     list_id: state.userListId,
@@ -870,7 +891,7 @@ function openViewPopup(location) {
     <p><strong>🏔️ Планина:</strong> ${escapeHtml(location.mountain || "Непосочена планина")}</p>
     <p><strong>📝 Описание:</strong> ${escapeHtml(location.description || "Без описание")}</p>
     <p><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
-    ${location.visit_date ? `<p><strong>📅 Дата:</strong> ${escapeHtml(location.visit_date)}</p>` : ""}
+    ${location.visit_date ? `<p><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
     <p><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
     ${imageUrl ? `<img class="location-image" src="${imageUrl}" alt="Снимка на локация" />` : "<p>Няма снимка.</p>"}
   `;
@@ -1043,11 +1064,14 @@ function openEditPopup(location) {
       <label>Дължина (longitude)
         <input id="edit-longitude" type="number" step="any" value="${location.longitude}" required />
       </label>
-      <label>Нова снимка (по избор)
-        <input id="edit-image" type="file" accept="image/*" />
-      </label>
-      <label>Снимка за popup (по избор)
+      <label>Снимка в popup (по избор)
         <input id="edit-popup-image" type="file" accept="image/*" />
+      </label>
+      <label>Титулна снимка (дясно поле Локации)
+        <input id="edit-title-image" type="file" accept="image/*" />
+      </label>
+      <label>Други снимки за локацията
+        <input id="edit-gallery-images" type="file" accept="image/*" multiple />
       </label>
     </form>
   `;
@@ -1065,10 +1089,23 @@ function openEditPopup(location) {
         const latitude = Number(document.getElementById("edit-latitude").value);
         const longitude = Number(document.getElementById("edit-longitude").value);
         const elevationM = parseOptionalInteger(document.getElementById("edit-elevation")?.value);
-        const file = document.getElementById("edit-image")?.files?.[0] || null;
         const popupImageFile = document.getElementById("edit-popup-image")?.files?.[0] || null;
+        const titleImageFile = document.getElementById("edit-title-image")?.files?.[0] || null;
+        const galleryFileList = document.getElementById("edit-gallery-images")?.files;
+        const galleryFiles = galleryFileList ? Array.from(galleryFileList) : [];
 
-        await updateLocation(location, { title, mountain, description, season, latitude, longitude, elevationM, file, popupImageFile });
+        await updateLocation(location, {
+          title,
+          mountain,
+          description,
+          season,
+          latitude,
+          longitude,
+          elevationM,
+          popupImageFile,
+          titleImageFile,
+          galleryFiles,
+        });
       },
     },
   ]);
@@ -1121,7 +1158,7 @@ function openDeletePopup(location) {
   );
 }
 
-async function updateLocation(location, { title, mountain, description, season, latitude, longitude, elevationM, file, popupImageFile }) {
+async function updateLocation(location, { title, mountain, description, season, latitude, longitude, elevationM, popupImageFile, titleImageFile, galleryFiles }) {
   if (!title || Number.isNaN(latitude) || Number.isNaN(longitude) || !SEASONS.includes(season)) {
     alert("Моля, попълнете валидни данни.");
     return;
@@ -1129,17 +1166,26 @@ async function updateLocation(location, { title, mountain, description, season, 
 
   let imagePaths = location.image_paths || [];
   let popupImagePath = location.popup_image_path || null;
-  if (file) {
-    const uploadedPath = await uploadImage(file);
-    if (uploadedPath) {
-      imagePaths = [uploadedPath];
+  let titleImagePath = location.title_image_path || null;
+
+  if (galleryFiles?.length) {
+    const uploadedGalleryPaths = await uploadImages(galleryFiles, title);
+    if (uploadedGalleryPaths.length) {
+      imagePaths = uploadedGalleryPaths;
     }
   }
 
   if (popupImageFile) {
-    const uploadedPopupPath = await uploadImage(popupImageFile);
+    const uploadedPopupPath = await uploadImage(popupImageFile, title);
     if (uploadedPopupPath) {
       popupImagePath = uploadedPopupPath;
+    }
+  }
+
+  if (titleImageFile) {
+    const uploadedTitlePath = await uploadImage(titleImageFile, title);
+    if (uploadedTitlePath) {
+      titleImagePath = uploadedTitlePath;
     }
   }
 
@@ -1155,6 +1201,7 @@ async function updateLocation(location, { title, mountain, description, season, 
       elevation_m: elevationM,
       image_paths: imagePaths,
       popup_image_path: popupImagePath,
+      title_image_path: titleImagePath,
     })
     .eq("id", location.id);
 
@@ -1167,13 +1214,14 @@ async function updateLocation(location, { title, mountain, description, season, 
   await loadLocations();
 }
 
-async function uploadImage(file) {
+async function uploadImage(file, locationTitle) {
   if (!state.user) {
     return null;
   }
 
+  const folderName = buildLocationFolderName(locationTitle);
   const safeName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-  const path = `${state.user.id}/${safeName}`;
+  const path = `public/${folderName}/${safeName}`;
 
   const { error } = await supabaseClient.storage.from("location-images").upload(path, file, {
     cacheControl: "3600",
@@ -1188,20 +1236,36 @@ async function uploadImage(file) {
   return path;
 }
 
-async function uploadImages(files) {
+async function uploadImages(files, locationTitle) {
   if (!files?.length) {
     return [];
   }
 
   const uploadedPaths = [];
   for (const file of files) {
-    const uploadedPath = await uploadImage(file);
+    const uploadedPath = await uploadImage(file, locationTitle);
     if (uploadedPath) {
       uploadedPaths.push(uploadedPath);
     }
   }
 
   return uploadedPaths;
+}
+
+function buildLocationFolderName(locationTitle) {
+  const raw = String(locationTitle || "location")
+    .trim()
+    .toLowerCase()
+    .replace(/^връх\s+/i, "");
+
+  const normalized = raw
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zа-я0-9]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalized || "location";
 }
 
 function titleImageUrl(location) {
@@ -1253,12 +1317,21 @@ function formatBgDate(isoDate) {
     return "Без дата";
   }
 
-  const date = new Date(isoDate);
+  const match = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}-${month}-${year}`;
+  }
+
+  const date = new Date(String(isoDate));
   if (Number.isNaN(date.getTime())) {
     return isoDate;
   }
 
-  return date.toLocaleDateString("bg-BG");
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 async function toggleGalleryFullscreen() {

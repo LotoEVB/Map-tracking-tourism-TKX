@@ -119,7 +119,7 @@ function renderLocations() {
         <td>${escapeHtml(location.title)}</td>
         <td>${escapeHtml(location.mountain || "-")}</td>
         <td>${escapeHtml(location.season || "-")}</td>
-        <td>${escapeHtml(location.visit_date || "-")}</td>
+        <td>${escapeHtml(location.visit_date ? formatBgDate(location.visit_date) : "-")}</td>
         <td>${Number.isFinite(location.elevation_m) ? `${location.elevation_m} м` : "-"}</td>
         <td>
           <div class="actions">
@@ -386,4 +386,22 @@ function parseOptionalInteger(value) {
     return null;
   }
   return Math.round(parsed);
+}
+
+function formatBgDate(isoDate) {
+  const match = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}-${month}-${year}`;
+  }
+
+  const date = new Date(String(isoDate));
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
 }
