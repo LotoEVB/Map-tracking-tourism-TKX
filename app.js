@@ -173,10 +173,17 @@ function initializeMapSearch() {
           state.mapSearchMarker.bindPopup(`<strong>${escapeHtml(firstResult.display_name || query)}</strong>`).openPopup();
 
           const matchedLocation = findMatchedLocationByQuery(query);
+          const elevationFromLabel = extractElevationFromTexts(
+            firstResult?.display_name,
+            matchedLocation?.title,
+            matchedLocation?.description
+          );
           const hasStoredElevation = Number.isFinite(matchedLocation?.elevation_m);
-          const elevationM = hasStoredElevation
-            ? matchedLocation.elevation_m
-            : await fetchElevationMeters(latitude, longitude);
+          const elevationM = Number.isFinite(elevationFromLabel)
+            ? elevationFromLabel
+            : hasStoredElevation
+              ? matchedLocation.elevation_m
+              : await fetchElevationMeters(latitude, longitude);
           const elevationText = Number.isFinite(elevationM) ? `${elevationM} м` : "без данни";
           status.textContent = `Координати: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Височина: ${elevationText}`;
 
@@ -1354,6 +1361,20 @@ function findMatchedLocationByQuery(query) {
   }
 
   return state.locations.find((location) => normalizeLocationTitle(location.title) === normalizedQuery) || null;
+}
+
+function extractElevationFromTexts(...texts) {
+  for (const text of texts) {
+    const match = String(text || "").match(/(\d{3,4})(?:[.,]\d+)?\s*[мm]\b/i);
+    if (match) {
+      const elevation = Number(match[1]);
+      if (Number.isFinite(elevation)) {
+        return elevation;
+      }
+    }
+  }
+
+  return null;
 }
 
 function buildSafeFileName(fileName) {
