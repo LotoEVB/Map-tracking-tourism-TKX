@@ -17,12 +17,11 @@ body {
   margin: 0 0 12px;
   min-height: 280px;
   background-image:
-    linear-gradient(rgba(17, 24, 39, 0.55), rgba(17, 24, 39, 0.55)),
-    url("Images/BanerImage.webp"),
+    url("Images/BanerImage6.webp"),
     url("Images/mountain-left.jpg"),
     url("Images/mountain-right.jpg");
-  background-position: center, center 32%, left center, right center;
-  background-size: auto, 50% auto, cover, cover;
+  background-position: center 40%, left center, right center;
+  background-size: 42% auto, cover, cover;
   background-repeat: no-repeat;
   color: #ffffff;
 }
@@ -88,8 +87,8 @@ body {
 .hero-content {
   margin-top: 36px;
   max-width: 760px;
-  margin-left: auto;
-  text-align: right;
+  margin-right: auto;
+  text-align: left;
 }
 
 .hero-content h1 {
@@ -471,6 +470,11 @@ body {
     min-height: 220px;
   }
 
+  .hero-banner {
+    background-position: center center, left center, right center;
+    background-size: cover, cover, cover;
+  }
+
   .hero-overlay {
     padding: 12px;
   }
@@ -669,6 +673,11 @@ body {
   .hero-banner,
   .hero-overlay {
     min-height: 214px;
+  }
+
+  .hero-banner {
+    background-position: center center, left center, right center;
+    background-size: cover, cover, cover;
   }
 
   .hero-overlay {

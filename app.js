@@ -15,6 +15,9 @@ const state = {
   selectedId: null,
   galleryAutoplayTimerId: null,
   mapSearchMarker: null,
+  isMapSearchInProgress: false,
+  lastMapSearchQuery: "",
+  lastMapSearchAt: 0,
   isCreatingLocation: false,
 };
 
@@ -119,21 +122,76 @@ function wireEvents() {
   });
 }
 
+async function geocodePlace(query) {
+  const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=bg&q=${encodeURIComponent(query)}`;
+
+  try {
+    const response = await fetch(nominatimUrl);
+    if (response.ok) {
+      const results = await response.json();
+      const firstResult = Array.isArray(results) ? results[0] : null;
+      const latitude = Number(firstResult?.lat);
+      const longitude = Number(firstResult?.lon);
+
+      if (firstResult && Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        return {
+          latitude,
+          longitude,
+          label: firstResult.display_name || query,
+        };
+      }
+
+      return null;
+    }
+
+    if (response.status !== 403 && response.status !== 429) {
+      throw new Error("Търсенето е временно недостъпно.");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Търсенето е временно недостъпно.") {
+      throw error;
+    }
+  }
+
+  const openMeteoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=bg&format=json`;
+  const fallbackResponse = await fetch(openMeteoUrl);
+  if (!fallbackResponse.ok) {
+    throw new Error("Търсенето е временно недостъпно.");
+  }
+
+  const fallbackData = await fallbackResponse.json();
+  const fallbackResult = Array.isArray(fallbackData?.results) ? fallbackData.results[0] : null;
+  const latitude = Number(fallbackResult?.latitude);
+  const longitude = Number(fallbackResult?.longitude);
+
+  if (!fallbackResult || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  const locationParts = [fallbackResult.name, fallbackResult.admin1, fallbackResult.country].filter(Boolean);
+  return {
+    latitude,
+    longitude,
+    label: locationParts.length ? locationParts.join(", ") : query,
+  };
+}
+
 function initializeMapSearch() {
   const SearchControl = L.Control.extend({
     onAdd() {
       const container = L.DomUtil.create("div", "leaflet-bar map-search-control");
       container.innerHTML = `
-        <div class="map-search-row">
-          <input id="map-search-input" class="map-search-input" type="text" placeholder="Търси място..." />
+        <form id="map-search-form" class="map-search-row" novalidate>
+          <input id="map-search-input" class="map-search-input" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="none" placeholder="Търси място..." />
           <button id="map-search-btn" class="map-search-btn" type="button">Търси</button>
-        </div>
+        </form>
         <p id="map-search-status" class="map-search-status"></p>
       `;
 
       L.DomEvent.disableClickPropagation(container);
       L.DomEvent.disableScrollPropagation(container);
 
+      const form = container.querySelector("#map-search-form");
       const input = container.querySelector("#map-search-input");
       const button = container.querySelector("#map-search-btn");
       const status = container.querySelector("#map-search-status");
@@ -144,26 +202,31 @@ function initializeMapSearch() {
           return;
         }
 
+        const now = Date.now();
+        const isRepeatedQuery = state.lastMapSearchQuery === query && now - state.lastMapSearchAt < 900;
+        if (state.isMapSearchInProgress || isRepeatedQuery) {
+          return;
+        }
+
+        state.isMapSearchInProgress = true;
+        state.lastMapSearchQuery = query;
+        state.lastMapSearchAt = now;
+        if (button instanceof HTMLButtonElement) {
+          button.disabled = true;
+        }
+
         status.textContent = "Търсене...";
 
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=bg&q=${encodeURIComponent(query)}`
-          );
-
-          if (!response.ok) {
-            throw new Error("Търсенето е временно недостъпно.");
-          }
-
-          const results = await response.json();
-          const firstResult = Array.isArray(results) ? results[0] : null;
-          const latitude = Number(firstResult?.lat);
-          const longitude = Number(firstResult?.lon);
-
-          if (!firstResult || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+          const geocodedPlace = await geocodePlace(query);
+          if (!geocodedPlace) {
             status.textContent = "Няма намерен резултат.";
             return;
           }
+
+          const latitude = geocodedPlace.latitude;
+          const longitude = geocodedPlace.longitude;
+          const placeLabel = geocodedPlace.label;
 
           map.flyTo([latitude, longitude], 13, { duration: 0.8 });
 
@@ -172,11 +235,11 @@ function initializeMapSearch() {
           }
 
           state.mapSearchMarker = L.marker([latitude, longitude]).addTo(map);
-          state.mapSearchMarker.bindPopup(`<strong>${escapeHtml(firstResult.display_name || query)}</strong>`).openPopup();
+          state.mapSearchMarker.bindPopup(`<strong>${escapeHtml(placeLabel)}</strong>`).openPopup();
 
           const matchedLocation = findMatchedLocationByQuery(query);
           const elevationFromLabel = extractElevationFromTexts(
-            firstResult?.display_name,
+            placeLabel,
             matchedLocation?.title,
             matchedLocation?.description
           );
@@ -189,22 +252,26 @@ function initializeMapSearch() {
           const elevationText = Number.isFinite(elevationM) ? `${elevationM} м` : "без данни";
           const isMobileSearchView = window.matchMedia("(max-width: 768px)").matches;
           status.textContent = isMobileSearchView
-            ? `Намерено: ${firstResult.display_name || query}`
+            ? `Намерено: ${placeLabel}`
             : `Координати: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Височина: ${elevationText}`;
 
           await persistSearchedElevation(query, elevationM);
         } catch (error) {
           status.textContent = error instanceof Error ? error.message : "Грешка при търсене.";
+        } finally {
+          state.isMapSearchInProgress = false;
+          if (button instanceof HTMLButtonElement) {
+            button.disabled = false;
+          }
         }
       };
 
       button?.addEventListener("click", runSearch);
-      input?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          runSearch();
-        }
+      form?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        runSearch();
       });
+      input?.addEventListener("search", runSearch);
 
       return container;
     },
