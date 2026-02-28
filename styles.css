@@ -529,16 +529,16 @@ body {
     overflow: hidden;
     pointer-events: none;
     visibility: hidden;
-    transform: translateX(18px);
+    transform: none;
     transform-origin: top right;
-    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.24s ease, padding 0.2s ease, margin-top 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    transition: none;
   }
 
   .hero-menu.mobile-open {
     margin-top: 6px;
-    padding: 5px;
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(75, 80, 90, 0.97);
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
     max-height: 170px;
     opacity: 1;
     overflow-y: auto;
@@ -554,6 +554,43 @@ body {
     padding: 3px 7px;
     font-size: 0.72rem;
     border-radius: 12px;
+    background: rgba(75, 80, 90, 0.97);
+    opacity: 0;
+    transform: translateX(18px);
+    transition: transform 0.24s ease, opacity 0.2s ease;
+  }
+
+  .menu-link:hover {
+    background: rgba(75, 80, 90, 0.97);
+  }
+
+  .hero-menu.mobile-open .menu-link {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(1) {
+    transition-delay: 0.03s;
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(2) {
+    transition-delay: 0.07s;
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(3) {
+    transition-delay: 0.11s;
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(4) {
+    transition-delay: 0.15s;
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(5) {
+    transition-delay: 0.19s;
+  }
+
+  .hero-menu.mobile-open .menu-link:nth-child(6) {
+    transition-delay: 0.23s;
   }
 
   .user-panel {
