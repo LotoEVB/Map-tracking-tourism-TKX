@@ -42,6 +42,7 @@ let mobileLocationCardObserver = null;
 
 const BULGARIA_CENTER = [42.7339, 25.4858];
 const DESKTOP_MEDIA_QUERY = "(min-width: 769px)";
+const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
 const initialMapZoom = window.matchMedia(DESKTOP_MEDIA_QUERY).matches ? 8 : 6.5;
 const map = L.map("map", {
   zoomSnap: 0.5,
@@ -827,11 +828,43 @@ function renderMarkers() {
       </div>
       `
     );
+    marker.on("popupopen", (event) => {
+      adjustMarkerPopupForMobile(event.popup);
+    });
     marker.on("click", () => {
       highlightLocation(location.id, true);
     });
     state.markersById.set(location.id, marker);
   });
+}
+
+function adjustMarkerPopupForMobile(popup) {
+  if (!window.matchMedia(MOBILE_MEDIA_QUERY).matches || !popup) {
+    return;
+  }
+
+  const refreshPopupLayout = () => {
+    popup.update();
+  };
+
+  requestAnimationFrame(refreshPopupLayout);
+
+  const popupElement = popup.getElement();
+  if (!popupElement) {
+    return;
+  }
+
+  const popupImage = popupElement.querySelector(".marker-popup-image");
+  if (!(popupImage instanceof HTMLImageElement)) {
+    return;
+  }
+
+  if (popupImage.complete) {
+    requestAnimationFrame(refreshPopupLayout);
+    return;
+  }
+
+  popupImage.addEventListener("load", refreshPopupLayout, { once: true });
 }
 
 function highlightLocation(locationId, scrollIntoView = false) {
@@ -855,7 +888,9 @@ function focusLocationOnMap(locationId, fromCardClick = false) {
 
   highlightLocation(locationId, !fromCardClick);
   map.flyTo([location.latitude, location.longitude], 13, { duration: 0.6 });
-  marker.openPopup();
+  map.once("moveend", () => {
+    marker.openPopup();
+  });
 }
 
 function handleMapClick(event) {
