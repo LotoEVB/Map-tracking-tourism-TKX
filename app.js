@@ -964,10 +964,31 @@ function focusLocationOnMap(locationId, fromCardClick = false) {
   }
 
   highlightLocation(locationId, !fromCardClick);
-  map.flyTo([location.latitude, location.longitude], 13, { duration: 0.6 });
-  map.once("moveend", () => {
-    marker.openPopup();
-  });
+
+  const focusMarker = () => {
+    map.invalidateSize();
+    map.flyTo([location.latitude, location.longitude], 13, { duration: 0.6 });
+    map.once("moveend", () => {
+      marker.openPopup();
+    });
+  };
+
+  const shouldScrollToMap = fromCardClick && window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+  if (!shouldScrollToMap) {
+    focusMarker();
+    return;
+  }
+
+  const mapSection = document.querySelector(".map-section");
+  if (mapSection instanceof HTMLElement) {
+    const heroBanner = document.querySelector(".hero-banner");
+    const headerHeight = heroBanner instanceof HTMLElement ? heroBanner.offsetHeight : 0;
+    const sectionTop = window.scrollY + mapSection.getBoundingClientRect().top;
+    const targetTop = Math.max(sectionTop - headerHeight - 8, 0);
+    window.scrollTo({ top: targetTop, behavior: "smooth" });
+  }
+
+  window.setTimeout(focusMarker, 320);
 }
 
 function handleMapClick(event) {
@@ -1677,7 +1698,10 @@ function transliterateBulgarian(value) {
 
   return String(value)
     .split("")
-    .map((char) => map[char] || char)
+    .map((char) => {
+      const mapped = map[char.toLowerCase()];
+      return mapped || char;
+    })
     .join("");
 }
 

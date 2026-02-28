@@ -73,7 +73,7 @@ body {
 
 .menu-link {
   border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(75, 80, 90, 0.9);
   color: #fff;
   border-radius: 20px;
   padding: 6px 12px;
@@ -81,7 +81,7 @@ body {
 }
 
 .menu-link:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(75, 80, 90, 0.97);
 }
 
 .hero-content {
