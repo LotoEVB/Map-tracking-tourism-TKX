@@ -243,6 +243,10 @@ body {
   margin: 8px 0 0;
 }
 
+.location-description-toggle {
+  display: none;
+}
+
 .location-image {
   margin-top: 8px;
   width: 100%;
@@ -461,23 +465,39 @@ body {
     height: 52vh;
   }
 
-  .map-section,
-  .list-section {
+  .map-section {
     height: calc(52vh + 56px);
+  }
+
+  .list-section {
+    height: auto;
   }
 
   .locations-list {
     max-height: none;
+    overflow: visible;
+    flex: initial;
+    padding-right: 0;
   }
 }
 
 @media (max-width: 768px) {
+  body {
+    padding-top: 232px;
+  }
+
   .hero-banner,
   .hero-overlay {
     min-height: 220px;
   }
 
   .hero-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1200;
+    margin: 0;
     background-position: center center, left center, right center;
     background-size: cover, cover, cover;
   }
@@ -665,6 +685,10 @@ body {
     padding: 10px;
   }
 
+  .list-section {
+    height: auto;
+  }
+
   #map {
     height: 46vh;
   }
@@ -676,6 +700,9 @@ body {
 
   .locations-list {
     max-height: none;
+    overflow: visible;
+    flex: initial;
+    padding-right: 0;
   }
 
   .location-card-mobile-reveal {
@@ -695,6 +722,18 @@ body {
     line-height: 1.35;
   }
 
+  .location-description-toggle {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #41546f;
+    font-size: 0.82rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
   .modal-content {
     width: min(560px, 95vw);
     padding: 10px;
@@ -703,6 +742,19 @@ body {
   .modal-actions {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .modal-content.modal-content-gallery .modal-actions {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+
+  .modal-content.modal-content-gallery .modal-actions .btn {
+    padding: 4px 5px;
+    font-size: 0.66rem;
+    border-radius: 6px;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   .map-search-control {
@@ -748,6 +800,10 @@ body {
 }
 
 @media (max-width: 520px) {
+  body {
+    padding-top: 224px;
+  }
+
   .hero-banner,
   .hero-overlay {
     min-height: 214px;
@@ -805,13 +861,19 @@ body {
     height: 42vh;
   }
 
-  .map-section,
-  .list-section {
+  .map-section {
     height: calc(42vh + 52px);
+  }
+
+  .list-section {
+    height: auto;
   }
 
   .locations-list {
     max-height: none;
+    overflow: visible;
+    flex: initial;
+    padding-right: 0;
   }
 
   .btn {

@@ -19,6 +19,7 @@ const state = {
   lastMapSearchQuery: "",
   lastMapSearchAt: 0,
   isCreatingLocation: false,
+  expandedDescriptionIds: new Set(),
 };
 
 const elements = {
@@ -128,6 +129,9 @@ function wireEvents() {
       }
       if (action === "delete") {
         openDeletePopup(location);
+      }
+      if (action === "description-toggle") {
+        toggleLocationDescription(location.id);
       }
       return;
     }
@@ -713,6 +717,11 @@ function renderCards() {
     .map((location) => {
       const own = location.owner_user_id === state.user?.id;
       const imageUrl = titleImageUrl(location) || firstImageUrl(location);
+      const isMobileView = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+      const descriptionMeta = splitDescriptionForMobile(location.description || "Без описание");
+      const isExpanded = state.expandedDescriptionIds.has(location.id);
+      const descriptionText = isMobileView && !isExpanded ? descriptionMeta.preview : descriptionMeta.full;
+      const hasExpandableDescription = isMobileView && descriptionMeta.hasMore;
 
       return `
       <article class="location-card ${state.selectedId === location.id ? "active" : ""}" data-id="${location.id}">
@@ -747,7 +756,12 @@ function renderCards() {
         </div>
         ${Number.isFinite(location.elevation_m) ? `<p class="location-meta"><strong>⛰️ Височина:</strong> ${location.elevation_m} м</p>` : ""}
         <p class="location-meta"><strong>🏔️ Планина:</strong> ${escapeHtml(location.mountain || "Непосочена планина")}</p>
-        <p class="location-description">${escapeHtml(location.description || "Без описание")}</p>
+        <p class="location-description">${escapeHtml(descriptionText)}</p>
+        ${
+          hasExpandableDescription
+            ? `<button class="location-description-toggle" type="button" data-action="description-toggle">${isExpanded ? "Скрий" : "....."}</button>`
+            : ""
+        }
         <p class="location-meta"><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
         ${location.visit_date ? `<p class="location-meta"><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
         <p class="location-meta"><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
@@ -758,6 +772,46 @@ function renderCards() {
     .join("");
 
   attachMobileLocationCardAnimation();
+}
+
+function splitDescriptionForMobile(text) {
+  const full = String(text || "").trim();
+  if (!full) {
+    return {
+      full: "Без описание",
+      preview: "Без описание",
+      hasMore: false,
+    };
+  }
+
+  const sentenceEndMatch = full.match(/[.!?](\s|$)/);
+  if (!sentenceEndMatch || typeof sentenceEndMatch.index !== "number") {
+    return {
+      full,
+      preview: full,
+      hasMore: false,
+    };
+  }
+
+  const firstSentenceEnd = sentenceEndMatch.index + 1;
+  const preview = full.slice(0, firstSentenceEnd).trim();
+  const rest = full.slice(firstSentenceEnd).trim();
+
+  return {
+    full,
+    preview: preview || full,
+    hasMore: rest.length > 0,
+  };
+}
+
+function toggleLocationDescription(locationId) {
+  if (state.expandedDescriptionIds.has(locationId)) {
+    state.expandedDescriptionIds.delete(locationId);
+  } else {
+    state.expandedDescriptionIds.add(locationId);
+  }
+
+  renderCards();
 }
 
 function attachMobileLocationCardAnimation() {
@@ -791,7 +845,7 @@ function attachMobileLocationCardAnimation() {
       });
     },
     {
-      root: elements.locationsList,
+      root: null,
       threshold: 0.18,
       rootMargin: "0px 0px -10% 0px",
     }
