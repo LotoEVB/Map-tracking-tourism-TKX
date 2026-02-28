@@ -40,11 +40,24 @@ const elements = {
 
 let mobileLocationCardObserver = null;
 
-const map = L.map("map").setView([42.7339, 25.4858], 7);
+const BULGARIA_CENTER = [42.7339, 25.4858];
+const DESKTOP_MEDIA_QUERY = "(min-width: 769px)";
+const initialMapZoom = window.matchMedia(DESKTOP_MEDIA_QUERY).matches ? 8 : 6.5;
+const map = L.map("map", {
+  zoomSnap: 0.5,
+  zoomDelta: 0.5,
+}).setView(BULGARIA_CENTER, initialMapZoom);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: "&copy; OpenStreetMap",
 }).addTo(map);
+
+if (window.matchMedia(DESKTOP_MEDIA_QUERY).matches) {
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+    map.setView(BULGARIA_CENTER, initialMapZoom, { animate: false });
+  });
+}
 
 initializeMapSearch();
 map.on("click", handleMapClick);

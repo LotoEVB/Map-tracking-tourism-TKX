@@ -100,13 +100,20 @@ body {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-.hero-content p {
+.hero-content p:not(.hero-subtitle) {
   margin: 10px 0 0;
   color: #e6edf9;
 }
 
 .hero-subtitle {
   display: none;
+  font-size: 3.4rem;
+  font-family: "Caveat", "Segoe UI", cursive;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  line-height: 1.2;
 }
 
 .auth-section {
@@ -516,8 +523,8 @@ body {
   .hero-menu.mobile-open {
     margin-top: 6px;
     padding: 5px;
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(17, 24, 39, 0.74);
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(75, 85, 99, 0.9);
     max-height: 170px;
     opacity: 1;
     overflow-y: auto;
@@ -533,6 +540,12 @@ body {
     padding: 3px 7px;
     font-size: 0.72rem;
     border-radius: 12px;
+    border-color: rgba(255, 255, 255, 0.62);
+    background: rgba(107, 114, 128, 0.52);
+  }
+
+  .menu-link:hover {
+    background: rgba(156, 163, 175, 0.68);
   }
 
   .user-panel {
@@ -565,20 +578,40 @@ body {
 
   .hero-content {
     margin-top: 0;
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: max-content;
+    position: static;
+    width: 100%;
     text-align: center;
   }
 
   .hero-content h1 {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    width: max-content;
     font-size: 2rem;
     line-height: 1.25;
   }
 
-  .hero-content p {
+  .hero-subtitle {
+    display: block;
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 15px;
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .hero-content h1,
+  .hero-subtitle {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+
+  .hero-content p:not(.hero-subtitle) {
     font-size: 0.92rem;
   }
 
@@ -704,6 +737,11 @@ body {
     font-size: 1.7rem;
   }
 
+  .hero-subtitle {
+    font-size: 1.7rem;
+    line-height: 1.25;
+  }
+
   .layout {
     gap: 10px;
     padding: 0 10px 10px;
@@ -760,5 +798,34 @@ body {
   .map-search-status {
     font-size: 0.64rem;
     min-height: 10px;
+  }
+}
+
+@media (min-width: 769px) {
+  .hero-overlay { 
+    position: relative; 
+  }
+
+  .hero-content {
+    position: absolute;
+    top: 65px;
+    left: 1%;
+    right: 72%;
+    margin: 0;
+    text-align: right;
+    z-index: 2;
+  }
+
+  .hero-subtitle {
+    display: block;
+    position: absolute;
+    top: 165px;
+    left: 72%;
+    right: 1%;
+    margin: 0;
+    font-size: 3.4rem;
+    color: #ffffff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7), 0 1px 4px rgba(0, 0, 0, 0.5);
+    text-align: left;
   }
 }
