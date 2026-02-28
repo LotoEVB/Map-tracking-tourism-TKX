@@ -35,6 +35,8 @@ const elements = {
   modalContent: document.querySelector(".modal-content"),
 };
 
+let mobileLocationCardObserver = null;
+
 const map = L.map("map").setView([42.7339, 25.4858], 7);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -185,7 +187,10 @@ function initializeMapSearch() {
               ? matchedLocation.elevation_m
               : await fetchElevationMeters(latitude, longitude);
           const elevationText = Number.isFinite(elevationM) ? `${elevationM} м` : "без данни";
-          status.textContent = `Координати: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Височина: ${elevationText}`;
+          const isMobileSearchView = window.matchMedia("(max-width: 768px)").matches;
+          status.textContent = isMobileSearchView
+            ? `Намерено: ${firstResult.display_name || query}`
+            : `Координати: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Височина: ${elevationText}`;
 
           await persistSearchedElevation(query, elevationM);
         } catch (error) {
@@ -616,6 +621,9 @@ function openUsersMenuPopup() {
 
 function renderCards() {
   if (!state.locations.length) {
+    if (mobileLocationCardObserver) {
+      mobileLocationCardObserver.disconnect();
+    }
     elements.locationsList.innerHTML = "<p>Няма добавени локации.</p>";
     return;
   }
@@ -658,7 +666,7 @@ function renderCards() {
         </div>
         ${Number.isFinite(location.elevation_m) ? `<p class="location-meta"><strong>⛰️ Височина:</strong> ${location.elevation_m} м</p>` : ""}
         <p class="location-meta"><strong>🏔️ Планина:</strong> ${escapeHtml(location.mountain || "Непосочена планина")}</p>
-        <p>${escapeHtml(location.description || "Без описание")}</p>
+        <p class="location-description">${escapeHtml(location.description || "Без описание")}</p>
         <p class="location-meta"><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
         ${location.visit_date ? `<p class="location-meta"><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
         <p class="location-meta"><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
@@ -667,6 +675,53 @@ function renderCards() {
       </article>`;
     })
     .join("");
+
+  attachMobileLocationCardAnimation();
+}
+
+function attachMobileLocationCardAnimation() {
+  const cards = Array.from(elements.locationsList.querySelectorAll(".location-card"));
+  if (!cards.length) {
+    return;
+  }
+
+  if (window.innerWidth > 768) {
+    if (mobileLocationCardObserver) {
+      mobileLocationCardObserver.disconnect();
+    }
+    cards.forEach((card) => {
+      card.classList.remove("location-card-mobile-reveal", "is-visible");
+    });
+    return;
+  }
+
+  if (mobileLocationCardObserver) {
+    mobileLocationCardObserver.disconnect();
+  }
+
+  mobileLocationCardObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+        } else {
+          entry.target.classList.remove("is-visible");
+        }
+      });
+    },
+    {
+      root: elements.locationsList,
+      threshold: 0.18,
+      rootMargin: "0px 0px -10% 0px",
+    }
+  );
+
+  cards.forEach((card, index) => {
+    card.classList.add("location-card-mobile-reveal");
+    card.classList.remove("is-visible");
+    card.style.transitionDelay = `${Math.min(index, 4) * 30}ms`;
+    mobileLocationCardObserver.observe(card);
+  });
 }
 
 function renderMarkers() {

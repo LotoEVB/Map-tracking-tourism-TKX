@@ -233,6 +233,10 @@ body {
   color: #506079;
 }
 
+.location-description {
+  margin: 8px 0 0;
+}
+
 .location-image {
   margin-top: 8px;
   width: 100%;
@@ -464,7 +468,7 @@ body {
 @media (max-width: 768px) {
   .hero-banner,
   .hero-overlay {
-    min-height: 200px;
+    min-height: 220px;
   }
 
   .hero-overlay {
@@ -472,58 +476,87 @@ body {
   }
 
   .hero-top-row {
-    justify-content: flex-end;
-    row-gap: 8px;
+    flex-direction: column;
+    align-items: flex-end;
+    row-gap: 6px;
   }
 
   .hamburger-btn {
     display: inline-flex;
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .hero-menu {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    width: 100%;
-    margin-top: 6px;
-    padding: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    gap: 4px;
+    width: min(142px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    margin-left: auto;
+    align-self: flex-end;
+    margin-top: 0;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 12px;
-    background: rgba(17, 24, 39, 0.74);
+    background: transparent;
     max-height: 0;
     opacity: 0;
     overflow: hidden;
     pointer-events: none;
-    transform: translateY(-6px);
-    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.2s ease;
+    visibility: hidden;
+    transform: translateX(18px);
+    transform-origin: top right;
+    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.24s ease, padding 0.2s ease, margin-top 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   }
 
   .hero-menu.mobile-open {
-    max-height: 360px;
+    margin-top: 6px;
+    padding: 5px;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(17, 24, 39, 0.74);
+    max-height: 170px;
     opacity: 1;
+    overflow-y: auto;
     pointer-events: auto;
-    transform: translateY(0);
+    visibility: visible;
+    transform: translateX(0);
   }
 
   .menu-link {
     width: 100%;
+    min-width: 0;
     text-align: left;
-    padding: 6px 10px;
-    font-size: 0.9rem;
+    padding: 3px 7px;
+    font-size: 0.72rem;
+    border-radius: 12px;
   }
 
   .user-panel {
     position: absolute;
+    left: 12px;
     right: 12px;
-    bottom: 10px;
-    font-size: 0.78rem;
+    bottom: 8px;
+    font-size: 0.72rem;
     gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: flex-end;
+    z-index: 2;
+  }
+
+  #user-email {
+    max-width: 70%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    text-align: right;
+    line-height: 1.15;
   }
 
   .user-panel .btn {
-    padding: 4px 7px;
-    font-size: 0.74rem;
+    padding: 3px 6px;
+    font-size: 0.7rem;
   }
 
   .hero-content {
@@ -563,6 +596,23 @@ body {
     max-height: none;
   }
 
+  .location-card-mobile-reveal {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+    transition: opacity 0.34s ease, transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+
+  .location-card-mobile-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .location-description {
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
   .modal-content {
     width: min(560px, 95vw);
     padding: 10px;
@@ -574,48 +624,71 @@ body {
   }
 
   .map-search-control {
-    width: min(250px, 62vw);
-    padding: 6px;
+    width: min(220px, 56vw);
+    padding: 5px;
   }
 
   .map-search-row {
     gap: 4px;
+    position: relative;
+  }
+
+  .map-search-row::before {
+    content: "\f002";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 0.72rem;
+    color: #6b7280;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
   }
 
   .map-search-input {
-    padding: 6px 7px;
-    font-size: 0.84rem;
+    padding: 5px 6px;
+    padding-left: 24px;
+    font-size: 0.78rem;
   }
 
   .map-search-btn {
-    padding: 6px 8px;
-    font-size: 0.82rem;
+    padding: 5px 7px;
+    font-size: 0.76rem;
+    display: none;
   }
 
   .map-search-status {
-    font-size: 0.74rem;
-    min-height: 14px;
+    font-size: 0.68rem;
+    min-height: 12px;
   }
 }
 
 @media (max-width: 520px) {
+  .hero-banner,
+  .hero-overlay {
+    min-height: 214px;
+  }
+
   .hero-overlay {
     padding: 10px;
   }
 
-  .user-panel {
-    right: 10px;
-    bottom: 8px;
-  }
-
   .hero-menu {
-    gap: 6px;
+    gap: 5px;
+    width: min(134px, calc(100vw - 20px));
   }
 
   .menu-link {
-    border-radius: 16px;
-    font-size: 0.84rem;
-    padding: 5px 9px;
+    border-radius: 11px;
+    font-size: 0.68rem;
+    padding: 3px 6px;
+  }
+
+  #user-email {
+    max-width: 68%;
+    word-break: break-all;
   }
 
   .hero-content h1 {
@@ -651,5 +724,32 @@ body {
   .btn {
     padding: 7px 10px;
     font-size: 0.9rem;
+  }
+
+  .map-search-control {
+    width: min(198px, 52vw);
+    padding: 4px;
+  }
+
+  .map-search-input {
+    padding: 4px 6px;
+    padding-left: 22px;
+    font-size: 0.74rem;
+  }
+
+  .map-search-row::before {
+    font-size: 0.68rem;
+    left: 7px;
+  }
+
+  .map-search-btn {
+    padding: 4px 6px;
+    font-size: 0.72rem;
+    display: none;
+  }
+
+  .map-search-status {
+    font-size: 0.64rem;
+    min-height: 10px;
   }
 }
