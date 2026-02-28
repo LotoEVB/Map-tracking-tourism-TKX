@@ -337,6 +337,7 @@ async function applySession(session) {
     elements.userPanel.classList.add("hidden");
     elements.adminBtn?.classList.add("hidden");
     elements.userEmail.textContent = "";
+    elements.userEmail.dataset.initials = "";
     state.locations = [];
     state.usersSummary = [];
     renderLocationsAndPins();
@@ -344,7 +345,9 @@ async function applySession(session) {
   }
 
   elements.userPanel.classList.remove("hidden");
-  elements.userEmail.textContent = state.user.email || "Влязъл потребител";
+  const userEmail = state.user.email || "Влязъл потребител";
+  elements.userEmail.textContent = userEmail;
+  elements.userEmail.dataset.initials = buildUserInitials(userEmail);
 
   await loadCurrentUserRole();
   if (state.currentRole === "admin") {
@@ -359,6 +362,26 @@ async function applySession(session) {
     state.userListId = null;
   }
   await loadLocations();
+}
+
+function buildUserInitials(value) {
+  const source = String(value || "").trim();
+  if (!source) {
+    return "??";
+  }
+
+  const localPart = source.includes("@") ? source.split("@")[0] : source;
+  const words = localPart
+    .split(/[^\p{L}\p{N}]+/u)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (words.length >= 2) {
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  const lettersOnly = localPart.replace(/[^\p{L}\p{N}]/gu, "");
+  return lettersOnly.slice(0, 2).toUpperCase() || "??";
 }
 
 async function loadCurrentUserRole() {

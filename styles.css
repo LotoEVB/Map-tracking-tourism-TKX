@@ -615,30 +615,57 @@ body {
 
   .user-panel {
     position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 8px;
+    left: 6px;
+    right: 8px;
+    bottom: 4px;
     font-size: 0.72rem;
     gap: 6px;
     flex-wrap: nowrap;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: flex-end;
     z-index: 2;
   }
 
   #user-email {
-    max-width: 70%;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    word-break: break-word;
-    text-align: right;
-    line-height: 1.15;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(75, 80, 90, 0.97);
+    color: transparent;
+    font-size: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    user-select: none;
+  }
+
+  #user-email::before {
+    content: attr(data-initials);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
   }
 
   .user-panel .btn {
     padding: 3px 6px;
     font-size: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(75, 80, 90, 0.97);
+    color: #fff;
+    border-radius: 10px;
+    margin-bottom: 2px;
+  }
+
+  .user-panel .btn:hover {
+    background: rgba(75, 80, 90, 0.97);
+  }
+
+  .user-panel .btn.btn-secondary {
+    background: rgba(75, 80, 90, 0.97);
+    color: #fff;
   }
 
   .hero-content {
@@ -831,8 +858,12 @@ body {
   }
 
   #user-email {
-    max-width: 68%;
-    word-break: break-all;
+    width: 32px;
+    height: 32px;
+  }
+
+  #user-email::before {
+    font-size: 0.68rem;
   }
 
   .hero-content h1 {
