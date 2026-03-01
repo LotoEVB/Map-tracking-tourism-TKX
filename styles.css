@@ -789,6 +789,10 @@ body {
     padding: 5px;
   }
 
+  .map-search-control.is-mobile-hidden {
+    display: none;
+  }
+
   .map-search-row {
     gap: 4px;
     position: relative;

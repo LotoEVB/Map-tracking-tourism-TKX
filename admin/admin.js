@@ -96,6 +96,7 @@ async function loadLocations() {
   const { data, error } = await supabaseClient
     .from("locations")
     .select("id, title, mountain, description, season, visit_date, latitude, longitude, elevation_m")
+    .order("visit_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) {

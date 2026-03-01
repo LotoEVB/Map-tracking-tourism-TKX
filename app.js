@@ -480,6 +480,7 @@ async function loadLocations() {
   const { data, error } = await supabaseClient
     .from("locations")
     .select("id, list_id, owner_user_id, title, mountain, description, season, visit_date, latitude, longitude, elevation_m, image_paths, popup_image_path, title_image_path, created_at")
+    .order("visit_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -906,13 +907,30 @@ function renderMarkers() {
       `
     );
     marker.on("popupopen", (event) => {
+      setMobileMapSearchVisibility(false);
       adjustMarkerPopupForMobile(event.popup);
+    });
+    marker.on("popupclose", () => {
+      setMobileMapSearchVisibility(true);
     });
     marker.on("click", () => {
       highlightLocation(location.id, true);
     });
     state.markersById.set(location.id, marker);
   });
+}
+
+function setMobileMapSearchVisibility(isVisible) {
+  if (!window.matchMedia(MOBILE_MEDIA_QUERY).matches) {
+    return;
+  }
+
+  const mapSearchControl = document.querySelector(".map-search-control");
+  if (!(mapSearchControl instanceof HTMLElement)) {
+    return;
+  }
+
+  mapSearchControl.classList.toggle("is-mobile-hidden", !isVisible);
 }
 
 function adjustMarkerPopupForMobile(popup) {
