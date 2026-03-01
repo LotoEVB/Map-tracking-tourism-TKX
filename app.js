@@ -356,7 +356,7 @@ async function applySession(session) {
     elements.adminBtn?.classList.add("hidden");
   }
 
-  if (state.currentRole !== "visitors") {
+  if (["publisher", "admin"].includes(state.currentRole)) {
     await ensureUserList();
   } else {
     state.userListId = null;
@@ -440,6 +440,11 @@ async function logout() {
 }
 
 async function ensureUserList() {
+  if (!state.user || !["publisher", "admin"].includes(state.currentRole)) {
+    state.userListId = null;
+    return;
+  }
+
   const { data: existingList, error: fetchError } = await supabaseClient
     .from("location_lists")
     .select("id")
@@ -1167,6 +1172,7 @@ async function createLocation({ title, mountain, description, season, visitDate,
   if (!state.userListId) {
     await ensureUserList();
     if (!state.userListId) {
+      alert("Вашата роля няма активен личен списък за публикуване. Свържете се с администратор.");
       return false;
     }
   }

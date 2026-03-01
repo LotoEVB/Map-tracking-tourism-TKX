@@ -15,7 +15,7 @@ th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef2f8; font
 .btn { border: none; border-radius: 8px; padding: 7px 10px; cursor: pointer; background: #3d5eea; color: #fff; }
 .btn-secondary { background: #e9eefb; color: #1f2a3d; }
 .icon-btn { border: 1px solid #c7d2e6; background: #fff; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; }
-.actions { display: flex; gap: 6px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; justify-content: center; align-items: center; }
 .modal-content { width: min(640px, 94vw); max-height: 90vh; overflow: auto; background: #fff; border-radius: 12px; padding: 12px; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }

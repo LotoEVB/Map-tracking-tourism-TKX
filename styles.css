@@ -513,8 +513,6 @@ body {
     row-gap: 6px;
     margin-top: -2px;
     margin-right: -2px;
-    position: relative;
-    z-index: 4;
   }
 
   .hamburger-btn {
@@ -618,15 +616,15 @@ body {
 
   .user-panel {
     position: absolute;
-    left: 6px;
+    left: 8px;
     right: 8px;
-    bottom: 4px;
+    bottom: 6px;
     font-size: 0.72rem;
     gap: 6px;
     flex-wrap: nowrap;
     justify-content: space-between;
     align-items: flex-end;
-    z-index: 2;
+    z-index: 5;
   }
 
   #user-email {

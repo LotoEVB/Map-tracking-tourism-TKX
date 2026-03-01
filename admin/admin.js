@@ -263,6 +263,7 @@ function renderUsers() {
       ).join("");
       const isApproved = user.user_role !== "visitors";
       const approveLabel = isApproved ? "Approved" : "Approve";
+      const isSelf = user.user_id === state.user?.id;
 
       return `
       <tr>
@@ -273,6 +274,8 @@ function renderUsers() {
             <button class="btn" data-user-approve="${user.user_id}" ${isApproved ? "disabled" : ""}>${approveLabel}</button>
             <select data-role-select="${user.user_id}">${roleOptions}</select>
             <button class="btn btn-secondary" data-role-save="${user.user_id}">Save Role</button>
+            <button class="btn btn-secondary" data-user-password="${user.user_id}" ${isSelf ? "disabled" : ""}>Change Password</button>
+            <button class="btn btn-secondary" data-user-delete="${user.user_id}" ${isSelf ? "disabled" : ""}>Delete User</button>
           </div>
         </td>
       </tr>`;
@@ -321,6 +324,96 @@ function renderUsers() {
       await loadUsers();
     });
   });
+
+  elements.usersBody.querySelectorAll("[data-user-password]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetUserId = btn.getAttribute("data-user-password");
+      const targetUser = state.users.find((item) => item.user_id === targetUserId);
+      if (targetUser) {
+        openUserPasswordPopup(targetUser);
+      }
+    });
+  });
+
+  elements.usersBody.querySelectorAll("[data-user-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetUserId = btn.getAttribute("data-user-delete");
+      const targetUser = state.users.find((item) => item.user_id === targetUserId);
+      if (targetUser) {
+        openUserDeletePopup(targetUser);
+      }
+    });
+  });
+}
+
+function openUserPasswordPopup(user) {
+  const userLabel = user.email || user.user_id;
+  const content = `
+    <form id="admin-user-password-form" class="form-grid">
+      <p>Задайте нова парола за <strong>${escapeHtml(userLabel)}</strong>.</p>
+      <label>Нова парола<input id="admin-user-new-password" type="password" minlength="8" autocomplete="new-password" /></label>
+    </form>
+  `;
+
+  const submitPasswordChange = async () => {
+    const newPassword = document.getElementById("admin-user-new-password")?.value || "";
+    if (newPassword.trim().length < 8) {
+      alert("Паролата трябва да е поне 8 символа.");
+      return;
+    }
+
+    const { error } = await supabaseClient.rpc("admin_set_user_password", {
+      target_user_id: user.user_id,
+      new_password: newPassword,
+    });
+
+    if (error) {
+      alert(`Password update error: ${error.message}`);
+      return;
+    }
+
+    closeModal();
+    alert("Паролата е обновена успешно.");
+  };
+
+  openModal("Change User Password", content, [
+    { text: "Cancel", className: "btn btn-secondary", onClick: closeModal },
+    { text: "Save Password", className: "btn", onClick: submitPasswordChange },
+  ]);
+
+  const form = document.getElementById("admin-user-password-form");
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitPasswordChange();
+  });
+}
+
+function openUserDeletePopup(user) {
+  const userLabel = user.email || user.user_id;
+  openModal(
+    "Delete User",
+    `<p>Сигурни ли сте, че искате да изтриете потребител <strong>${escapeHtml(userLabel)}</strong>?</p>`,
+    [
+      { text: "Cancel", className: "btn btn-secondary", onClick: closeModal },
+      {
+        text: "Delete",
+        className: "btn",
+        onClick: async () => {
+          const { error } = await supabaseClient.rpc("admin_delete_user", {
+            target_user_id: user.user_id,
+          });
+
+          if (error) {
+            alert(`Delete user error: ${error.message}`);
+            return;
+          }
+
+          closeModal();
+          await loadUsers();
+        },
+      },
+    ]
+  );
 }
 
 function openModal(title, bodyHtml, actions) {
