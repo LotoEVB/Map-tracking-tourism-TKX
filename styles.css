@@ -793,6 +793,10 @@ body {
     display: none;
   }
 
+  .leaflet-control-zoom.is-mobile-hidden {
+    display: none;
+  }
+
   .map-search-row {
     gap: 4px;
     position: relative;

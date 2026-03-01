@@ -908,10 +908,12 @@ function renderMarkers() {
     );
     marker.on("popupopen", (event) => {
       setMobileMapSearchVisibility(false);
+      setMobileZoomControlVisibility(false);
       adjustMarkerPopupForMobile(event.popup);
     });
     marker.on("popupclose", () => {
       setMobileMapSearchVisibility(true);
+      setMobileZoomControlVisibility(true);
     });
     marker.on("click", () => {
       highlightLocation(location.id, true);
@@ -931,6 +933,19 @@ function setMobileMapSearchVisibility(isVisible) {
   }
 
   mapSearchControl.classList.toggle("is-mobile-hidden", !isVisible);
+}
+
+function setMobileZoomControlVisibility(isVisible) {
+  if (!window.matchMedia(MOBILE_MEDIA_QUERY).matches) {
+    return;
+  }
+
+  const zoomControl = document.querySelector(".leaflet-control-zoom");
+  if (!(zoomControl instanceof HTMLElement)) {
+    return;
+  }
+
+  zoomControl.classList.toggle("is-mobile-hidden", !isVisible);
 }
 
 function adjustMarkerPopupForMobile(popup) {
