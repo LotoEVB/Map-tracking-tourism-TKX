@@ -745,6 +745,7 @@ function renderCards() {
   elements.locationsList.innerHTML = state.locations
     .map((location) => {
       const own = location.owner_user_id === state.user?.id;
+      const canEdit = own || state.currentRole === "editor";
       const imageUrl = titleImageUrl(location) || firstImageUrl(location);
       const isMobileView = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
       const descriptionMeta = splitDescriptionForMobile(location.description || "Без описание");
@@ -770,11 +771,17 @@ function renderCards() {
                 : ""
             }
             ${
-              own
+              canEdit
                 ? `
               <button class="icon-btn" data-action="edit" title="Редакция">
                 <i class="fa-regular fa-pen-to-square"></i>
               </button>
+            `
+                : ""
+            }
+            ${
+              own
+                ? `
               <button class="icon-btn" data-action="delete" title="Изтриване">
                 <i class="fa-regular fa-trash-can"></i>
               </button>
@@ -1359,8 +1366,55 @@ function openGalleryPopup(location) {
 }
 
 function openEditPopup(location) {
-  if (location.owner_user_id !== state.user?.id) {
+  const own = location.owner_user_id === state.user?.id;
+  const canEditorAddImages = state.currentRole === "editor" && !own;
+
+  if (!own && !canEditorAddImages) {
     alert("Можете да редактирате само вашите локации.");
+    return;
+  }
+
+  if (canEditorAddImages) {
+    const content = `
+      <form id="edit-images-form" class="edit-form">
+        <p class="location-meta">Можете да добавяте снимки към тази локация.</p>
+        <label>Снимка в popup (по избор)
+          <input id="edit-popup-image" type="file" accept="image/*" />
+        </label>
+        <label>Титулна снимка (дясно поле Локации)
+          <input id="edit-title-image" type="file" accept="image/*" />
+        </label>
+        <label>Други снимки за локацията
+          <input id="edit-gallery-images" type="file" accept="image/*" multiple />
+        </label>
+      </form>
+    `;
+
+    openModal("Добавяне на снимки", content, [
+      { text: "Отказ", className: "btn btn-secondary", onClick: closeModal },
+      {
+        text: "Запази",
+        className: "btn",
+        onClick: async () => {
+          const popupImageFile = document.getElementById("edit-popup-image")?.files?.[0] || null;
+          const titleImageFile = document.getElementById("edit-title-image")?.files?.[0] || null;
+          const galleryFileList = document.getElementById("edit-gallery-images")?.files;
+          const galleryFiles = galleryFileList ? Array.from(galleryFileList) : [];
+
+          if (!popupImageFile && !titleImageFile && !galleryFiles.length) {
+            alert("Изберете поне една снимка.");
+            return;
+          }
+
+          await updateLocationImages(location, {
+            popupImageFile,
+            titleImageFile,
+            galleryFiles,
+          });
+        },
+      },
+    ]);
+
     return;
   }
 
@@ -1536,6 +1590,55 @@ async function updateLocation(location, { title, mountain, description, season, 
 
   if (error) {
     alert(`Грешка при редакция: ${error.message}`);
+    return;
+  }
+
+  closeModal();
+  await loadLocations();
+}
+
+async function updateLocationImages(location, { popupImageFile, titleImageFile, galleryFiles }) {
+  let imagePaths = location.image_paths || [];
+  let popupImagePath = location.popup_image_path || null;
+  let titleImagePath = location.title_image_path || null;
+
+  const folderVisitDate = location.visit_date || null;
+  const locationTitle = location.title || "location";
+
+  await ensureLocationFolder(locationTitle, folderVisitDate);
+
+  if (galleryFiles?.length) {
+    const uploadedGalleryPaths = await uploadImages(galleryFiles, locationTitle, folderVisitDate);
+    if (uploadedGalleryPaths.length) {
+      imagePaths = [...imagePaths, ...uploadedGalleryPaths];
+    }
+  }
+
+  if (popupImageFile) {
+    const uploadedPopupPath = await uploadImage(popupImageFile, locationTitle, folderVisitDate);
+    if (uploadedPopupPath) {
+      popupImagePath = uploadedPopupPath;
+    }
+  }
+
+  if (titleImageFile) {
+    const uploadedTitlePath = await uploadImage(titleImageFile, locationTitle, folderVisitDate);
+    if (uploadedTitlePath) {
+      titleImagePath = uploadedTitlePath;
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from("locations")
+    .update({
+      image_paths: imagePaths,
+      popup_image_path: popupImagePath,
+      title_image_path: titleImagePath,
+    })
+    .eq("id", location.id);
+
+  if (error) {
+    alert(`Грешка при добавяне на снимки: ${error.message}`);
     return;
   }
 
