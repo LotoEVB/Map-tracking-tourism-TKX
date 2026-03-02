@@ -40,6 +40,7 @@ const elements = {
 };
 
 let mobileLocationCardObserver = null;
+let toastContainer = null;
 
 const BULGARIA_CENTER = [42.7339, 25.4858];
 const DESKTOP_MEDIA_QUERY = "(min-width: 769px)";
@@ -1224,6 +1225,7 @@ async function createLocation({ title, mountain, description, season, visitDate,
   const popupImagePath = popupImageFile ? await uploadImage(popupImageFile, title, visitDate) : null;
   const titleImagePath = titleImageFile ? await uploadImage(titleImageFile, title, visitDate) : null;
   const imagePaths = await uploadImages(galleryFiles || [], title, visitDate);
+  const uploadedImagesCount = imagePaths.length + (popupImagePath ? 1 : 0) + (titleImagePath ? 1 : 0);
 
   const { error } = await supabaseClient.from("locations").insert({
     list_id: state.userListId,
@@ -1245,6 +1247,11 @@ async function createLocation({ title, mountain, description, season, visitDate,
     alert(`Грешка при добавяне: ${error.message}`);
     return false;
   }
+
+  if (uploadedImagesCount > 0) {
+    showToast(`Снимките са качени успешно (${uploadedImagesCount}).`);
+  }
+  showToast("Локацията е създадена успешно.");
 
   await loadLocations();
   return true;
@@ -2041,6 +2048,49 @@ function closeModal() {
   }
   elements.modalContent?.classList.remove("modal-content-gallery");
   elements.modal.classList.add("hidden");
+}
+
+function getToastContainer() {
+  if (toastContainer instanceof HTMLElement && document.body.contains(toastContainer)) {
+    return toastContainer;
+  }
+
+  const container = document.createElement("div");
+  container.className = "toast-container";
+  document.body.appendChild(container);
+  toastContainer = container;
+  return container;
+}
+
+function showToast(message, durationMs = 2600) {
+  const safeMessage = String(message || "").trim();
+  if (!safeMessage) {
+    return;
+  }
+
+  const container = getToastContainer();
+  const toast = document.createElement("div");
+  toast.className = "app-toast";
+  toast.textContent = safeMessage;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add("is-visible");
+  });
+
+  const removeToast = () => {
+    toast.classList.remove("is-visible");
+    toast.classList.add("is-hiding");
+    window.setTimeout(() => {
+      toast.remove();
+      if (container.childElementCount === 0) {
+        container.remove();
+        toastContainer = null;
+      }
+    }, 220);
+  };
+
+  window.setTimeout(removeToast, Math.max(1400, durationMs));
 }
 
 function escapeHtml(value) {
