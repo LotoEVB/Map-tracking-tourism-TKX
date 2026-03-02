@@ -1588,6 +1588,7 @@ async function updateLocation(location, { title, mountain, description, season, 
   let imagePaths = location.image_paths || [];
   let popupImagePath = location.popup_image_path || null;
   let titleImagePath = location.title_image_path || null;
+  let publishedImagesCount = 0;
 
   const folderVisitDate = location.visit_date || null;
 
@@ -1596,7 +1597,8 @@ async function updateLocation(location, { title, mountain, description, season, 
   if (galleryFiles?.length) {
     const uploadedGalleryPaths = await uploadImages(galleryFiles, title, folderVisitDate);
     if (uploadedGalleryPaths.length) {
-      imagePaths = uploadedGalleryPaths;
+      imagePaths = [...imagePaths, ...uploadedGalleryPaths];
+      publishedImagesCount += uploadedGalleryPaths.length;
     }
   }
 
@@ -1604,6 +1606,7 @@ async function updateLocation(location, { title, mountain, description, season, 
     const uploadedPopupPath = await uploadImage(popupImageFile, title, folderVisitDate);
     if (uploadedPopupPath) {
       popupImagePath = uploadedPopupPath;
+      publishedImagesCount += 1;
     }
   }
 
@@ -1611,6 +1614,7 @@ async function updateLocation(location, { title, mountain, description, season, 
     const uploadedTitlePath = await uploadImage(titleImageFile, title, folderVisitDate);
     if (uploadedTitlePath) {
       titleImagePath = uploadedTitlePath;
+      publishedImagesCount += 1;
     }
   }
 
@@ -1635,6 +1639,11 @@ async function updateLocation(location, { title, mountain, description, season, 
     return;
   }
 
+  if (publishedImagesCount > 0) {
+    showToast(`Снимките са публикувани успешно (${publishedImagesCount}).`);
+  }
+  showToast("Локацията е обновена успешно.");
+
   closeModal();
   await loadLocations();
 }
@@ -1643,6 +1652,7 @@ async function updateLocationImages(location, { popupImageFile, titleImageFile, 
   let imagePaths = location.image_paths || [];
   let popupImagePath = location.popup_image_path || null;
   let titleImagePath = location.title_image_path || null;
+  let publishedImagesCount = 0;
 
   const folderVisitDate = location.visit_date || null;
   const locationTitle = location.title || "location";
@@ -1653,6 +1663,7 @@ async function updateLocationImages(location, { popupImageFile, titleImageFile, 
     const uploadedGalleryPaths = await uploadImages(galleryFiles, locationTitle, folderVisitDate);
     if (uploadedGalleryPaths.length) {
       imagePaths = [...imagePaths, ...uploadedGalleryPaths];
+      publishedImagesCount += uploadedGalleryPaths.length;
     }
   }
 
@@ -1660,6 +1671,7 @@ async function updateLocationImages(location, { popupImageFile, titleImageFile, 
     const uploadedPopupPath = await uploadImage(popupImageFile, locationTitle, folderVisitDate);
     if (uploadedPopupPath) {
       popupImagePath = uploadedPopupPath;
+      publishedImagesCount += 1;
     }
   }
 
@@ -1667,6 +1679,7 @@ async function updateLocationImages(location, { popupImageFile, titleImageFile, 
     const uploadedTitlePath = await uploadImage(titleImageFile, locationTitle, folderVisitDate);
     if (uploadedTitlePath) {
       titleImagePath = uploadedTitlePath;
+      publishedImagesCount += 1;
     }
   }
 
@@ -1682,6 +1695,10 @@ async function updateLocationImages(location, { popupImageFile, titleImageFile, 
   if (error) {
     alert(`Грешка при добавяне на снимки: ${error.message}`);
     return;
+  }
+
+  if (publishedImagesCount > 0) {
+    showToast(`Снимките са публикувани успешно (${publishedImagesCount}).`);
   }
 
   closeModal();
