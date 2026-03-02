@@ -1438,6 +1438,12 @@ function openEditPopup(location) {
         text: "Запази",
         className: "btn",
         onClick: async () => {
+          const saveButton = elements.modalActions.querySelector("button.btn:not(.btn-secondary)");
+          if (saveButton instanceof HTMLButtonElement) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Качване...";
+          }
+
           const popupImageFile = document.getElementById("edit-popup-image")?.files?.[0] || null;
           const titleImageFile = document.getElementById("edit-title-image")?.files?.[0] || null;
           const galleryFileList = document.getElementById("edit-gallery-images")?.files;
@@ -1445,14 +1451,25 @@ function openEditPopup(location) {
 
           if (!popupImageFile && !titleImageFile && !galleryFiles.length) {
             alert("Изберете поне една снимка.");
+            if (saveButton instanceof HTMLButtonElement) {
+              saveButton.disabled = false;
+              saveButton.textContent = "Запази";
+            }
             return;
           }
 
-          await updateLocationImages(location, {
-            popupImageFile,
-            titleImageFile,
-            galleryFiles,
-          });
+          try {
+            await updateLocationImages(location, {
+              popupImageFile,
+              titleImageFile,
+              galleryFiles,
+            });
+          } finally {
+            if (saveButton instanceof HTMLButtonElement && document.body.contains(saveButton)) {
+              saveButton.disabled = false;
+              saveButton.textContent = "Запази";
+            }
+          }
         },
       },
     ]);
@@ -1738,21 +1755,27 @@ async function uploadImage(file, locationTitle, visitDate) {
     return null;
   }
 
-  const folderName = buildLocationFolderName(locationTitle, visitDate);
-  const safeName = `${Date.now()}-${buildSafeFileName(file.name)}`;
-  const path = `public/${folderName}/${safeName}`;
+  try {
+    const folderName = buildLocationFolderName(locationTitle, visitDate);
+    const safeName = `${Date.now()}-${buildSafeFileName(file.name)}`;
+    const path = `public/${folderName}/${safeName}`;
 
-  const { error } = await supabaseClient.storage.from("location-images").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
+    const { error } = await supabaseClient.storage.from("location-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
 
-  if (error) {
-    alert(`Грешка при качване на снимка: ${error.message}`);
+    if (error) {
+      alert(`Грешка при качване на снимка: ${error.message}`);
+      return null;
+    }
+
+    return path;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Неочаквана грешка при качване.";
+    alert(`Грешка при качване на снимка: ${message}`);
     return null;
   }
-
-  return path;
 }
 
 async function uploadImages(files, locationTitle, visitDate) {
