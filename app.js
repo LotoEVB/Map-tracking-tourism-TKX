@@ -1473,10 +1473,10 @@ function openEditPopup(location) {
         </select>
       </label>
       <label>Ширина (latitude)
-        <input id="edit-latitude" type="number" step="any" value="${location.latitude}" required />
+        <input id="edit-latitude" type="number" step="any" value="${formatCoordinate(location.latitude)}" required />
       </label>
       <label>Дължина (longitude)
-        <input id="edit-longitude" type="number" step="any" value="${location.longitude}" required />
+        <input id="edit-longitude" type="number" step="any" value="${formatCoordinate(location.longitude)}" required />
       </label>
       <label>Снимка в popup (по избор)
         <input id="edit-popup-image" type="file" accept="image/*" />

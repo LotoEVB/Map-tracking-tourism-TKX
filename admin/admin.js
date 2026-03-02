@@ -160,8 +160,8 @@ function openLocationEditPopup(location) {
       <label>Описание<textarea id="admin-edit-description" rows="4">${escapeHtml(location.description || "")}</textarea></label>
       <label>Сезон<input id="admin-edit-season" value="${escapeHtmlAttr(location.season || "")}" /></label>
       <label>Дата<input id="admin-edit-date" type="date" value="${location.visit_date || ""}" /></label>
-      <label>Latitude<input id="admin-edit-lat" type="number" step="any" value="${location.latitude}" /></label>
-      <label>Longitude<input id="admin-edit-lng" type="number" step="any" value="${location.longitude}" /></label>
+      <label>Latitude<input id="admin-edit-lat" type="number" step="any" value="${formatCoordinate(location.latitude)}" /></label>
+      <label>Longitude<input id="admin-edit-lng" type="number" step="any" value="${formatCoordinate(location.longitude)}" /></label>
     </form>
   `;
 
@@ -498,4 +498,13 @@ function formatBgDate(isoDate) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
+}
+
+function formatCoordinate(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "";
+  }
+
+  return numericValue.toFixed(4);
 }
