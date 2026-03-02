@@ -369,11 +369,85 @@ body {
   overflow: auto;
 }
 
+.menu-popup-summary {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  color: #3e5167;
+}
+
 .menu-popup-item {
   border: 1px solid #d3dded;
   border-radius: 10px;
   padding: 10px;
   background: #fbfcff;
+}
+
+.menu-popup-list-locations .location-menu-card {
+  background: rgba(221, 244, 227, 0.55);
+  border-color: #c8e5ce;
+  animation: locationCardFadeIn 0.36s ease both;
+  animation-delay: calc(var(--card-index, 0) * 35ms);
+}
+
+.menu-popup-list-seasons .season-menu-card {
+  background: rgba(224, 238, 255, 0.62);
+  border-color: #c5d8f5;
+  animation: locationCardFadeIn 0.36s ease both;
+  animation-delay: calc(var(--card-index, 0) * 35ms);
+}
+
+.season-locations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.season-location-card {
+  border: 1px solid #d5e4fa;
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(240, 247, 255, 0.72);
+  line-height: 1.35;
+}
+
+.season-location-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.season-location-btn .season-location-card {
+  display: block;
+  box-shadow: 0 2px 7px rgba(45, 75, 115, 0.15);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.season-location-btn:hover .season-location-card,
+.season-location-btn:focus-visible .season-location-card {
+  box-shadow: 0 4px 10px rgba(45, 75, 115, 0.2);
+  transform: translateY(-1px);
+}
+
+.season-location-btn:active .season-location-card {
+  box-shadow: 0 1px 4px rgba(45, 75, 115, 0.16);
+  transform: translateY(1px);
+}
+
+@keyframes locationCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .menu-auth-form {

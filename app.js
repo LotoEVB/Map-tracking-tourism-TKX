@@ -271,7 +271,7 @@ function initializeMapSearch() {
           const isMobileSearchView = window.matchMedia("(max-width: 768px)").matches;
           status.textContent = isMobileSearchView
             ? `Намерено: ${placeLabel}`
-            : `Координати: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} | Височина: ${elevationText}`;
+            : `Координати: ${formatCoordinate(latitude)}, ${formatCoordinate(longitude)} | Височина: ${elevationText}`;
 
           await persistSearchedElevation(query, elevationM);
         } catch (error) {
@@ -560,29 +560,50 @@ function openSeasonsMenuPopup() {
     seasonMap.set(season, current);
   });
 
-  const ordered = Array.from(seasonMap.entries()).sort((a, b) => a[0].localeCompare(b[0], "bg"));
+  const extractSeasonYear = (seasonLabel) => {
+    const match = String(seasonLabel || "").match(/(\d{4})/);
+    return match ? Number(match[1]) : null;
+  };
+
+  const ordered = Array.from(seasonMap.entries()).sort((a, b) => {
+    const yearA = extractSeasonYear(a[0]);
+    const yearB = extractSeasonYear(b[0]);
+
+    if (Number.isFinite(yearA) && Number.isFinite(yearB) && yearA !== yearB) {
+      return yearB - yearA;
+    }
+
+    return String(b[0]).localeCompare(String(a[0]), "bg");
+  });
+  const totalSeasons = ordered.length;
+  const totalLocations = state.locations.length;
 
   const content = `
-    <div class="menu-popup-list">
+    <p class="menu-popup-summary">Общо сезони: <strong>${totalSeasons}</strong> • Общо локации: <strong>${totalLocations}</strong></p>
+    <div class="menu-popup-list menu-popup-list-seasons">
       ${ordered
         .map(
-          ([season, seasonLocations]) => `
-        <article class="menu-popup-item">
+          ([season, seasonLocations], seasonIndex) => `
+        <article class="menu-popup-item season-menu-card" style="--card-index: ${seasonIndex};">
           <p><strong>${escapeHtml(season)}</strong></p>
           <p class="location-meta">Брой локации: ${seasonLocations.length}</p>
-          ${seasonLocations
-            .map(
-              (location) => `
-            <div class="location-meta">
-              <strong>📍 ${escapeHtml(location.title)}</strong><br>
-              ${Number.isFinite(location.elevation_m) ? `⛰️ ${location.elevation_m} м<br>` : ""}
-              🏔️ ${escapeHtml(location.mountain || "Непосочена планина")}<br>
-              🍂 ${escapeHtml(location.season || "Без сезон")}<br>
-              📅 ${escapeHtml(formatBgDate(location.visit_date))}
-            </div>
-          `
-            )
-            .join("")}
+          <div class="season-locations-grid">
+            ${seasonLocations
+              .map(
+                (location) => `
+              <button type="button" class="season-location-btn" data-season-location-focus="${location.id}" title="Покажи на карта">
+                <span class="location-meta season-location-card">
+                  <strong>📍 ${escapeHtml(location.title)}</strong><br>
+                  ${Number.isFinite(location.elevation_m) ? `⛰️ ${location.elevation_m} м<br>` : ""}
+                  🏔️ ${escapeHtml(location.mountain || "Непосочена планина")}<br>
+                  📅 ${escapeHtml(formatBgDate(location.visit_date))}<br>
+                  📍 ${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}
+                </span>
+              </button>
+            `
+              )
+              .join("")}
+          </div>
         </article>
       `
         )
@@ -591,6 +612,14 @@ function openSeasonsMenuPopup() {
   `;
 
   openModal("Сезони", content, [{ text: "Затвори", className: "btn btn-secondary", onClick: closeModal }]);
+
+  elements.modalBody.querySelectorAll("[data-season-location-focus]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const locationId = button.getAttribute("data-season-location-focus");
+      closeModal();
+      focusLocationOnMap(locationId, false);
+    });
+  });
 }
 
 function openLoginPopup() {
@@ -660,14 +689,20 @@ function openLocationsMenuPopup() {
     return;
   }
 
+  const totalLocations = state.locations.length;
   const content = `
-    <div class="menu-popup-list">
+    <p class="menu-popup-summary">Общо локации: <strong>${totalLocations}</strong></p>
+    <div class="menu-popup-list menu-popup-list-locations">
       ${state.locations
         .map(
-          (location) => `
-        <article class="menu-popup-item">
+          (location, index) => `
+        <article class="menu-popup-item location-menu-card" style="--card-index: ${index};">
           <p><strong>${escapeHtml(location.title)}</strong></p>
-          <p class="location-meta">${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
+          <p class="location-meta">📍 ${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}</p>
+          <p class="location-meta">🏔️ ${escapeHtml(location.mountain || "Непосочена планина")}</p>
+          <p class="location-meta">🍂 ${escapeHtml(location.season || "Без сезон")}${location.visit_date ? ` • 📅 ${escapeHtml(formatBgDate(location.visit_date))}` : ""}</p>
+          ${Number.isFinite(location.elevation_m) ? `<p class="location-meta">⛰️ ${location.elevation_m} м</p>` : ""}
+          <p class="location-meta">📝 ${escapeHtml(getShortDescription(location.description || ""))}</p>
           <div class="location-actions">
             <button class="icon-btn" data-menu-location-focus="${location.id}" title="Покажи на карта">
               <i class="fa-solid fa-location-dot"></i>
@@ -800,7 +835,7 @@ function renderCards() {
         }
         <p class="location-meta"><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
         ${location.visit_date ? `<p class="location-meta"><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
-        <p class="location-meta"><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
+        <p class="location-meta"><strong>📍 Координати:</strong> ${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}</p>
         <p class="location-meta"><strong>👤 Собственик:</strong> ${own ? "Вие" : "Друг потребител"}</p>
         ${imageUrl ? `<img class="location-image" src="${imageUrl}" alt="Снимка на локация" />` : ""}
       </article>`;
@@ -989,14 +1024,14 @@ function adjustMarkerPopupForMobile(popup) {
   popupImage.addEventListener("load", refreshPopupLayout, { once: true });
 }
 
-function highlightLocation(locationId, scrollIntoView = false) {
+function highlightLocation(locationId, scrollIntoView = false, alignToTop = false) {
   state.selectedId = locationId;
   renderCards();
 
   if (scrollIntoView) {
     const selectedCard = elements.locationsList.querySelector(`.location-card[data-id="${locationId}"]`);
     if (selectedCard) {
-      selectedCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      selectedCard.scrollIntoView({ behavior: "smooth", block: alignToTop ? "start" : "nearest" });
     }
   }
 }
@@ -1008,7 +1043,7 @@ function focusLocationOnMap(locationId, fromCardClick = false) {
     return;
   }
 
-  highlightLocation(locationId, !fromCardClick);
+  highlightLocation(locationId, !fromCardClick, !fromCardClick);
 
   const focusMarker = () => {
     map.invalidateSize();
@@ -1224,7 +1259,7 @@ function openViewPopup(location) {
     <p><strong>📝 Описание:</strong> ${escapeHtml(location.description || "Без описание")}</p>
     <p><strong>🍂 Сезон:</strong> ${escapeHtml(location.season || "Сезон 2015")}</p>
     ${location.visit_date ? `<p><strong>📅 Дата:</strong> ${escapeHtml(formatBgDate(location.visit_date))}</p>` : ""}
-    <p><strong>📍 Координати:</strong> ${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}</p>
+    <p><strong>📍 Координати:</strong> ${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}</p>
     ${imageUrl ? `<img class="location-image" src="${imageUrl}" alt="Снимка на локация" />` : "<p>Няма снимка.</p>"}
   `;
 
@@ -1911,6 +1946,15 @@ function formatBgDate(isoDate) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
+}
+
+function formatCoordinate(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "-";
+  }
+
+  return numericValue.toFixed(4);
 }
 
 function parseDdMmYyyyToIso(value) {
